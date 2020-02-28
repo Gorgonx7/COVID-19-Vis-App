@@ -1,0 +1,9 @@
+body {
+    background-color: #3c3c3c;
+    color: #cfcfcf;
+  }
+div {
+    line-height: 15px;
+    margin-bottom: 3px;
+    background-color: grey;
+}
