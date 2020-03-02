@@ -1,18 +1,13 @@
-var d3 = require('d3');
+
 var jsdom = require('jsdom');
 var htmlStub = '<html><head></head><body><div id="dataviz-container"></div><script src="js/d3.v3.min.js"></script></body></html>' // html file skull with a container div for the d3 dataviz
 const { JSDOM } = jsdom;
-const { window } = new JSDOM();
+const { window } = new JSDOM(htmlStub);
 const { document } = (new JSDOM('')).window;
 
 
-exports.createGraph = function(title, data){
-  jsdom.env({ features : { QuerySelector : true }, html : htmlStub
-    , done : function(errors, window) {
-    // process the html document, like if we were at client side
-      // code to generate the dataviz and process the resulting html file to be added here
-    }
-  })
+exports.createGraph = function(d3, title, data){
+  
   var el = window.document.querySelector('#dataviz-container')
 	var body = window.document.querySelector('body')
   // append the svg to the container selector
@@ -38,16 +33,7 @@ var clientScript = "d3.select('#" + circleId + "').transition().delay(1000).attr
 d3.select(body)
 	.append('script')
     .html(clientScript);
-    // save result in an html file
-var fs = require('fs')
-, svgsrc = window.document.innerHTML
 
-fs.writeFile('index.html', svgsrc, function(err) {
-if(err) {
-  console.log('error saving document', err)
-} else {
-  console.log('The file was saved, open index.html to see the result')
-}
-})
+var svgsrc = window.document.querySelector('body').innerHTML;
 }
 

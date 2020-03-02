@@ -8,17 +8,28 @@ const express = require("express");
 const path = require("path");
 const router = express.Router();
 const platform = "laptop";
+const d3 = require('d3');
+const _ = require('underscore');
 //const platform = "uni";
 //const platform = "desktop";
 const test = require('./d3FrontEnd');
-test.createGraph();
+test.createGraph(d3);
 //DotEnv config, change per system
 require('dotenv').config({path: __dirname + '/config/' + platform + '.env'});
 
 const app = express();
 const port = process.env.port || "8000";
 
+var dataArray; 
+require('./Load_data').readInData(function(dataArray){
+    //console.log(dataArray);
+    var organisedData;
+    require('./d3JSTools').nestData(d3,'Country/Region', dataArray, function(output){
+        organisedData = output;
+        console.log(organisedData);
+    });
 
+});
 
 router.get('/', (req,res) =>{
     res.sendFile('index.html');
@@ -28,7 +39,7 @@ router.get('/', (req,res) =>{
 app.use(express.static(__dirname + '/public/views'));
 app.use(express.static(__dirname + '/public/js'));
 app.use(express.static(__dirname + '/public/css'));
-app.use(express.static(__dirname, '/public/img'));
+app.use(express.static(__dirname + '/public/img'));
 app.set('views', path.join(__dirname, '/views'));
 // Define router
 app.use('/', router);
