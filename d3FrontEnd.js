@@ -41,28 +41,61 @@ exports.createBarChart = function(title, data, axisRange){
   const { document } = window.document;
   var el = window.document.querySelector('#dataviz-container');
   var body = window.document.querySelector('body');
+
   const margin = 60;
-  const width = 1000 - 2 * margin;
+  const width = 1500 - 2 * margin;
   const height = 600 - 2 * margin;
 
     
   d3.select(el).append('svg').append('g').attr('transform', `translate(${margin}, ${margin})`);
+
   const chart = d3.select(el).select('svg');
-  const yScale = d3.scaleLinear()
+  
+  chart.attr('Height', `${height + 2 * margin}`);
+  chart.attr('Width', `${width + 2* margin}`);
+//chart.style('padding-left','10px');
+  const yData = data.map((s) => s.Confirmed);
+
+  var yScale = d3.scaleLinear()
     .range([height, 0])
-    .domain([axisRange[0], axisRange[1]]);
-    
-  chart.append('g')
+    .domain(axisRange);
+  console.log(axisRange[0])
+    //var yScale = d3.scaleLinear().range([height, 0]).domain([0,100]);
+ //data.map((obj) => console.log(obj.Confirmed));
+  chart.append('g').attr('id', 'yAxis').attr("transform", "translate(50, 0)")
     .call(d3.axisLeft(yScale));
   
    const xScale = d3.scaleBand()
     .range([0, width])
-    .domain(sample.map((s) => s.language))
-    .padding(0.2)
+    .domain(data.map((s) =>{ if(s['Country/Region'] != 'Mainland China'){
+        return s['Country/Region'];
+    } else { return s['Province/State'];
+  }
+})).padding(0.2)
 
   chart.append('g')
-    .attr('transform', `translate(0, ${height})`)
+    .attr('transform', `translate(50, ${height})`).attr('id', 'xAxis')
     .call(d3.axisBottom(xScale));
+ 
+    d3.select(el).select('#xAxis').selectAll("text")
+  .attr("y", 0)
+  .attr("x", 10)
+  .attr("dy", ".35em")
+  .attr("transform", "rotate(90)")
+  .style("text-anchor", "start");
+  
+  chart.selectAll()
+  .data(data)
+  .enter()
+  .append('rect')
+  .attr('x', (s) => { if(s['Country/Region'] != 'Mainland China'){
+    return xScale(s['Country/Region']);
+} else { return xScale(s['Province/State']);
+}
+})
+  .attr('y', (s) => s.Confirmed)
+  .attr('height', (s) => height - yScale(s.Confirmed))
+    .attr('width', xScale.bandwidth())
 
   return window.document.querySelector('html').innerHTML;
 

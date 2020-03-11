@@ -22,6 +22,7 @@ const port = process.env.port || "8000";
 var dataArray; 
 var d3Tools = require('./d3JSTools');
 var frontEnd = require('./d3FrontEnd');
+var WindowToDisplay;
 require('./Load_data').readInData(function(dataArray){
     //console.log(dataArray);
     var organisedData;
@@ -29,7 +30,7 @@ require('./Load_data').readInData(function(dataArray){
         organisedData = output;
         require('./d3JSTools').GetLatestData(organisedData, function(latestData){
             var minMax = d3Tools.GetMinMaxValue("Confirmed", latestData);
-            var WindowToDisplay = frontEnd.createBarChart("Latest Statistics For Corona Virus Rate", organisedData, minMax);
+            WindowToDisplay = frontEnd.createBarChart("Latest Statistics For Corona Virus Rate", latestData, minMax);
         });
     });
 
@@ -37,7 +38,7 @@ require('./Load_data').readInData(function(dataArray){
 
 router.get('/', (req,res) =>{
     
-    res.send(require('./d3FrontEnd').createBarChart());
+    res.send(WindowToDisplay);
     //res.sendFile('index.html');
 });
 
