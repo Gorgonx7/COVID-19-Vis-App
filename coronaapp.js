@@ -22,15 +22,17 @@ const port = process.env.port || "8000";
 var dataArray; 
 var d3Tools = require('./d3JSTools');
 var frontEnd = require('./d3FrontEnd');
+
 var WindowToDisplay;
 require('./Load_data').readInData(function(dataArray){
-    //console.log(dataArray);
+    //d3Tools.GetDataOnDate(dataArray, Date.
     var organisedData;
     require('./d3JSTools').nestData('Country/Region', dataArray, function(output){
         organisedData = output;
         require('./d3JSTools').GetLatestData(organisedData, function(latestData){
             var minMax = d3Tools.GetMinMaxValue("Confirmed", latestData);
-            WindowToDisplay = frontEnd.createBarChart("Latest Statistics For Corona Virus Rate", latestData, minMax);
+            //WindowToDisplay = frontEnd.createBarChart("Latest Statistics For Corona Virus Rate", latestData, minMax);
+            WindowToDisplay = frontEnd.drawMap();
         });
     });
 

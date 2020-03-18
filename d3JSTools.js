@@ -36,3 +36,12 @@ exports.GetMinMaxValue = function(key, rawData) {
     }
     return [currentMin, currentMax];
 }
+
+exports.GetDataOnDate = function(data, Date, callback){
+    exports.nestData("Last Update",data, function(OrganisedData){
+        DateArray = OrganisedData.map((s) => {
+            return s["Last Update"];
+        });
+        console.log(DateArray);
+    })
+}
