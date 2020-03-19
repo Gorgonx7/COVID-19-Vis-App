@@ -2,7 +2,7 @@ const csv = require('csv-parser');
 const fs = require('fs');
 const path = require('path');
 
-const currentDataLocation = path.join(__dirname, "./data/csse_covid_19_data/csse_covid_19_daily_reports/");
+const currentDataLocation = path.join(__dirname, "./data/COVID-19/csse_covid_19_data/csse_covid_19_daily_reports/");
 
 
 exports.readInData = function(callback){

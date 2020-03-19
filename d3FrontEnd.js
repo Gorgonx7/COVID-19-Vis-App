@@ -144,7 +144,7 @@ chart.append('text')
 }
 
 exports.drawMap = function(){
-  var htmlStub = '<html><head></head><body><div id="dataviz-container"></div><script src="js/d3.v3.min.js"></script></body></html>' // html file skull with a container div for the d3 dataviz
+  var htmlStub = '<html><head><link rel="stylesheet" href="index.css"></head><body><div id="dataviz-container"></div></body></html>' // html file skull with a container div for the d3 dataviz
   const { JSDOM } = jsdom;
   const { window } = new JSDOM(htmlStub);
   const { document } = window.document;
@@ -155,12 +155,11 @@ exports.drawMap = function(){
   var svg = d3.select(el).append('svg').attr('width',Width).attr('height', Height).attr('id', 'SVG');
   
 
- var worldData = require('./world.json');
-   
+ var worldData = require('./world2.json');
+ worldData.objects.subunits = worldData.objects.ne_10m_admin_0_map_subunits;
 
-var subunits = topo.feature(worldData, worldData.objects.subunits);
 var projection = d3.geoMercator()
-    .scale(300)
+    .scale(400)
     .translate([Width / 2, Height / 2]);
     
     var path = d3.geoPath()
@@ -171,8 +170,17 @@ var projection = d3.geoMercator()
     .data(topo.feature(worldData, worldData.objects.subunits).features)
     .enter().append("path")
     .attr("class", function(d) {
-      console.log(d);
-      return "subunit " + d.id; })
+      
+      return "subunit " + d.properties.ADM0_A3; })
     .attr("d", path);
+
+    //console.log(window.document.querySelector('html').innerHTML);
   return window.document.querySelector('html').innerHTML;
+}
+
+
+exports.CreateColourScale = function(){
+  color = d3.scale.linear().domain([1,length])
+      .interpolate(d3.interpolateHcl)
+      .range([d3.rgb("#007AFF"), d3.rgb('#FFF500')]);
 }
