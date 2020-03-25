@@ -24,18 +24,11 @@ var d3Tools = require('./d3JSTools');
 var frontEnd = require('./d3FrontEnd');
 
 var WindowToDisplay;
-require('./Load_data').readInData(function(dataArray){
-    //d3Tools.GetDataOnDate(dataArray, Date.
-    var organisedData;
-    require('./d3JSTools').nestData('Country/Region', dataArray, function(output){
-        organisedData = output;
-        require('./d3JSTools').GetLatestData(organisedData, function(latestData){
+require('./Load_data').readInData(function(dataArray){   
+        require('./d3JSTools').GetLatestData(dataArray, function(latestData){
             var minMax = d3Tools.GetMinMaxValue("Confirmed", latestData);
-            //WindowToDisplay = frontEnd.createBarChart("Latest Statistics For Corona Virus Rate", latestData, minMax);
-            WindowToDisplay = frontEnd.drawMap();
+            WindowToDisplay = frontEnd.HeatMapOfCoronaCases(latestData, minMax);
         });
-    });
-
 });
 
 router.get('/', (req,res) =>{

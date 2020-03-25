@@ -1,7 +1,7 @@
 var d3 = require('./d3');
 var jsdom = require('jsdom');
-var topo = require('topojson')
-
+var topo = require('topojson');
+var d3Tools = require('./d3JSTools');
 exports.createGraph = function(title, data){
   var htmlStub = '<html><head></head><body><div id="dataviz-container"></div><script src="js/d3.v3.min.js"></script></body></html>' // html file skull with a container div for the d3 dataviz
   const { JSDOM } = jsdom;
@@ -74,16 +74,6 @@ exports.createBarChart = function(title, data, axisRange){
   }
 })).padding(0.2)
 
-// Grid lines
-// Vertical
-/*
-chart.append('g')
-.attr('class', 'grid')
-.attr('transform', `translate(0, ${height})`)
-.call(d3.axisBottom()
-    .scale(xScale)
-    .tickSize(-height, 0, 0)
-    .tickFormat(''))*/
 //Horizontal
 chart.append('g')
 .attr('class', 'grid').attr('transform', `translate(${margin},0)`)
@@ -143,8 +133,8 @@ chart.append('text')
 
 }
 
-exports.drawMap = function(){
-  var htmlStub = '<html><head><link rel="stylesheet" href="index.css"></head><body><div id="dataviz-container"></div></body></html>' // html file skull with a container div for the d3 dataviz
+exports.drawMap = function(rawData, minMax){
+  var htmlStub = '<html><head> <script src="https://d3js.org/d3.v5.min.js"></script><link rel="stylesheet" href="index.css"></head><body><div id="dataviz-container"></div></body></html>' // html file skull with a container div for the d3 dataviz
   const { JSDOM } = jsdom;
   const { window } = new JSDOM(htmlStub);
   const { document } = window.document;
@@ -153,34 +143,79 @@ exports.drawMap = function(){
   const Width = 1920;
   const Height = 1080;
   var svg = d3.select(el).append('svg').attr('width',Width).attr('height', Height).attr('id', 'SVG');
-  
+  var worldData = require('./world4.json');
+  worldData.objects.subunits = worldData.objects.ne_10m_admin_1_states_provinces;
 
- var worldData = require('./world2.json');
- worldData.objects.subunits = worldData.objects.ne_10m_admin_0_map_subunits;
-
-var projection = d3.geoMercator()
-    .scale(400)
-    .translate([Width / 2, Height / 2]);
+  var projection = d3.geoMercator()
+      .scale(400)
+      .translate([Width / 2, Height / 2]);
     
-    var path = d3.geoPath()
-    .projection(projection);
+  var path = d3.geoPath()
+  .projection(projection);
 
+  var colourScale = exports.CreateColourScale(minMax);
 
-    svg.selectAll(".subunit")
+  svg.selectAll(".subunit")
     .data(topo.feature(worldData, worldData.objects.subunits).features)
     .enter().append("path")
     .attr("class", function(d) {
       
-      return "subunit " + d.properties.ADM0_A3; })
-    .attr("d", path);
+      return "subunit " + d.properties.adm0_a3; 
+   }).attr('data-State', function(d){
+     return d.properties.gn_name;
+   })
+   .attr('stroke', function(d){
+     
+        for(const [Country, value] of Object.entries(rawData)){
+          
+          if(d.properties.admin.toLowerCase().includes(rawData[Country].Country.toLowerCase())){
+            if(rawData[Country].States.length == 1){
+              return colourScale(rawData[Country].Confirmed);
+              }
+              for(const [State, value] of Object.entries(rawData[Country].States)){
+                if(d.properties.gn_name == value.State[0]){
+                  return colourScale(value.Confirmed);
+                }
+              }
+          }     
+        }
 
-    //console.log(window.document.querySelector('html').innerHTML);
+    }).attr('style', function(d){
+     
+      for(const [Country, value] of Object.entries(rawData)){
+        
+        if(d.properties.admin.toLowerCase().includes(rawData[Country].Country.toLowerCase())){
+          if(rawData[Country].States.length == 1){
+            return "fill: " +  colourScale(rawData[Country].Confirmed);
+            }
+            for(const [State, value] of Object.entries(rawData[Country].States)){
+              if(d.properties.gn_name == State){
+                return "fill: " + colourScale(value.Confirmed);
+              }
+            }       
+        }     
+      }
+    })
+    .attr("d", path);
+    
+  return window.document.querySelector('html').innerHTML;
+}
+exports.HeatMapOfCoronaCases = function(rawData, minMax){
+  var htmlStub = "<html>" + exports.drawMap(rawData, minMax) + "</html>";
+  const { JSDOM } = jsdom;
+  const { window } = new JSDOM(htmlStub);
+  const { document } = window.document;
+  var el = window.document.querySelector('#dataviz-container');
+  var body = window.document.querySelector('body');
+ // var svg = d3.select(el).select('svg');
+  d3.select(body).append('script').attr('src', 'index.js');
+
   return window.document.querySelector('html').innerHTML;
 }
 
-
-exports.CreateColourScale = function(){
-  color = d3.scale.linear().domain([1,length])
+exports.CreateColourScale = function(minMax){
+ return color = d3.scaleLinear().domain(minMax)
       .interpolate(d3.interpolateHcl)
-      .range([d3.rgb("#007AFF"), d3.rgb('#FFF500')]);
+      .range([d3.rgb("#0AFF43"), d3.rgb('#FF1301')]);
 }
+

@@ -7,31 +7,33 @@ exports.nestData = function(key, rawData, callback){
 }
 exports.GetLatestData = function(rawData, callback){
     var output = [];
-    
-    for( const [key, value] of Object.entries(rawData))
+    var outputKey = "";
+    var LatestTime = null;
+    for( const [Key, value] of Object.entries(rawData))
     {
-        if(value.key == 'Mainland China'){
-            exports.nestData('Province/State', value.values, function(chinaValues){
-                for(const [province, pValues] of Object.entries(chinaValues)){
-                    output.push(pValues.values[pValues.values.length - 1]);
-                }
-            });
-        }
        
-        output.push(value.values[value.values.length - 1])
+        if(LatestTime == null){
+            LatestTime = new Date(Key);
+            outputKey = Key;
+        }
+        if(LatestTime < new Date(Key)){
+            LatestTime = new Date(Key);
+            outputKey = Key;
+        }
     }
-    callback(output);
+    
+    callback(rawData[outputKey]);
 }
 exports.GetMinMaxValue = function(key, rawData) {
     var currentMax = 0;
     var currentMin = 100000000000;
-    for(var x = 0; x < rawData.length; x++){
-        dataArray = rawData[x];
-        if(parseInt(rawData[x][key]) > currentMax){
-            currentMax = parseInt(rawData[x][key]);
+    for(const [Country, value] of Object.entries(rawData)){
+        dataArray = rawData[Country];
+        if(parseInt(dataArray[key]) > currentMax){
+            currentMax = parseInt(dataArray[key]);
             
-        } else if(parseInt(rawData[x][key]) < currentMin){
-            currentMin = parseInt(rawData[x][key]);
+        } else if(parseInt(dataArray[key]) < currentMin){
+            currentMin = parseInt(dataArray[key]);
         }
     }
     return [currentMin, currentMax];
@@ -45,3 +47,6 @@ exports.GetDataOnDate = function(data, Date, callback){
         console.log(DateArray);
     })
 }
+
+
+

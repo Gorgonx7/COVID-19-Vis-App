@@ -8,6 +8,8 @@
             "type": "node",
             "request": "launch",
             "name": "Launch Program",
+            
+            "runtimeArgs":[ "--max-old-space-size=8192"],
             "skipFiles": [
                 "<node_internals>/**"
             ],
