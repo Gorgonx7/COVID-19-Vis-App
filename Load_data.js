@@ -35,6 +35,9 @@ function cleanData(dataArray){
         
         Output.State = [dataEntry['Province/State']];
         Output.Country = dataEntry['Country/Region'];
+        if(Output.Country != "UK" && Output.Country != "United Kingdom" && !Output.Country.includes("China")){
+            continue;
+        }
         /*
         US, Korea, South, Serbia, North Macedonia, Guadeloupe, Reunion, Martinique, Congo, Tanzania, Mayotte, Eswatini, Timor-Leste, Cape Verde
 
@@ -109,10 +112,22 @@ function cleanData(dataArray){
                 TimeOrientatedOutput[Output.Time] = {};
             } 
             if(TimeOrientatedOutput[Output.Time][Output.Country] != null){
+                var Add = true;
+                for(var x = 0; x < TimeOrientatedOutput[Output.Time][Output.Country].States.length; x++){
+                    var Values = TimeOrientatedOutput[Output.Time][Output.Country].States[x];
+                    if(Values.Confirmed == Output.Confirmed && Output.Deaths == Values.Deaths && Output.Recovered == Values.Recovered && Output.Time == Values.Time){
+                        Add = false;
+                    }
+                }
+                if(Add){
                 TimeOrientatedOutput[Output.Time][Output.Country].Confirmed += Output.Confirmed;
                 TimeOrientatedOutput[Output.Time][Output.Country].Deaths += Output.Deaths;
                 TimeOrientatedOutput[Output.Time][Output.Country].Recovered += Output.Recovered;
                 TimeOrientatedOutput[Output.Time][Output.Country].States.push(Output);
+                if(Output.State[0] != undefined){
+                TimeOrientatedOutput[Output.Time][Output.Country].StateNames.push(Output.State[0]);
+                }
+                }
             } else{
                 TimeOrientatedOutput[Output.Time][Output.Country] = {};
                 TimeOrientatedOutput[Output.Time][Output.Country].Confirmed = Output.Confirmed;
@@ -120,12 +135,17 @@ function cleanData(dataArray){
                 TimeOrientatedOutput[Output.Time][Output.Country].Recovered = Output.Recovered;
                 TimeOrientatedOutput[Output.Time][Output.Country].Country = Output.Country;
                 TimeOrientatedOutput[Output.Time][Output.Country].States = [Output];
+                if(Output.State[0] != undefined){
+                TimeOrientatedOutput[Output.Time][Output.Country].StateNames = [Output.State[0]];
+                } else{
+                    TimeOrientatedOutput[Output.Time][Output.Country].StateNames = [];
+                }
             }   
     }
     // forwards Data Propergation
     for( const [time, CountryData] of Object.entries(TimeOrientatedOutput)){   
         for(const [CountryName, Data] of Object.entries(CountryData)){
-           
+            
             var [year, month, day] = time.split('-');
             var searchString = time.substr(0,time.length - 2) + (parseInt(time.substr(time.length - 2, time.length -1)) + 1);
             if(TimeOrientatedOutput[searchString] == null && parseInt(day) >= 30){
@@ -136,17 +156,67 @@ function cleanData(dataArray){
                     if(TimeOrientatedOutput[year + "-" + month + "-" + day][CountryName] == null ){
                         // then we need to use last months data
                         TimeOrientatedOutput[year + "-" + month + "-" + day][CountryName] = Data;
+                    } else if(Data.StatesNames.length > 1){
+                        for(var x = 0; x < Data.StateNames.length; x++){
+                            var names = TimeOrientatedOutput[year + "-" + month + "-" + day][CountryName].StateNames;
+                            if(!names.includes(Data.StateNames[x])){
+                                TimeOrientatedOutput[year + "-" + month + "-" + day][CountryName].States.push(Data.States[x]);
+                                TimeOrientatedOutput[year + "-" + month + "-" + day][CountryName].StateNames.push(Data.StateNames[x])
+                            }
+
+                        }
+                        
                     }
                 }
-
             } else{
                 if(TimeOrientatedOutput[searchString] != null){
                 if(TimeOrientatedOutput[searchString][CountryName] == null){
+                   
                     TimeOrientatedOutput[searchString][CountryName] = Data;
+                }else if(Data.StateNames.length > 1){
+                    var Names = TimeOrientatedOutput[searchString][CountryName].StateNames;
+                    for(var x = 0; x < Data.StateNames.length; x++){                      
+                        
+                        if(!Names.includes(Data.StateNames[x])){
+                            if(Data.States[x].Time == time){
+                            TimeOrientatedOutput[searchString][CountryName].States.push(Data.States[x]);
+                            TimeOrientatedOutput[searchString][CountryName].StateNames.push(Data.StateNames[x])
+                            }
+                        }
+
+                    }
+                    
                 }
             }
             }
         }
     }
+    function ConvertToCSV(objArray) {
+        var array = typeof objArray != 'object' ? JSON.parse(objArray) : objArray;
+        var ChinaString = 'Date, Confirmed, Deaths, Recovered\n';
+        var UKString = 'Date, Confirmed, Deaths, Recovered\n';
+
+        for (const [date, dateData] of Object.entries(array)) {
+            let line = date + ',';
+            if(dateData['China'] != null){
+                let China = dateData['China'];
+                ChinaString += line + China.Confirmed + ',' + China.Deaths + ',' + China.Recovered + '\n'
+
+            }
+            if(dateData['United Kingdom'] != null){
+                UK = dateData['United Kingdom'];
+                UKString += line + UK.Confirmed + ',' + UK.Deaths + ',' + UK.Recovered + '\n';
+            }
+            
+        }
+        var fs = require('fs');
+        var x = fs.writeFileSync('china.csv', ChinaString, (error) => console.log(error));
+        
+        var x = fs.writeFileSync('uk.csv', UKString, (error) => console.log(error));
+        
+        return [UKString, ChinaString];
+    }
+    var out = ConvertToCSV(TimeOrientatedOutput);
+    console.log(out);
     return TimeOrientatedOutput;
 }

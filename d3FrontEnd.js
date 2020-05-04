@@ -2,6 +2,8 @@ var d3 = require('./d3');
 var jsdom = require('jsdom');
 var topo = require('topojson');
 var d3Tools = require('./d3JSTools');
+exports.currentDom;
+exports.currentMapData;
 exports.createGraph = function(title, data){
   var htmlStub = '<html><head></head><body><div id="dataviz-container"></div><script src="js/d3.v3.min.js"></script></body></html>' // html file skull with a container div for the d3 dataviz
   const { JSDOM } = jsdom;
@@ -134,7 +136,7 @@ chart.append('text')
 }
 
 exports.drawMap = function(rawData, minMax){
-  var htmlStub = '<html><head> <script src="https://d3js.org/d3.v5.min.js"></script><link rel="stylesheet" href="index.css"></head><body><div id="dataviz-container"></div></body></html>' // html file skull with a container div for the d3 dataviz
+  var htmlStub = '<html><head><script src="jquery-3.4.1.min.js"></script> <script src="https://d3js.org/d3.v5.min.js"></script><link rel="stylesheet" href="index.css"></head><body><div id="dataviz-container"></div></body></html>' // html file skull with a container div for the d3 dataviz
   const { JSDOM } = jsdom;
   const { window } = new JSDOM(htmlStub);
   const { document } = window.document;
@@ -154,50 +156,60 @@ exports.drawMap = function(rawData, minMax){
   .projection(projection);
 
   var colourScale = exports.CreateColourScale(minMax);
-
+var CurrentData;
   svg.selectAll(".subunit")
     .data(topo.feature(worldData, worldData.objects.subunits).features)
     .enter().append("path")
     .attr("class", function(d) {
-      
+
       return "subunit " + d.properties.adm0_a3; 
-   }).attr('data-State', function(d){
-     return d.properties.gn_name;
-   })
+   
+    }).attr('data-State', function(d){
+   
+      return d.properties.gn_name;
+   
+    })
    .attr('stroke', function(d){
-     
-        for(const [Country, value] of Object.entries(rawData)){
-          
+        for(const [Country, value] of Object.entries(rawData)){  
           if(d.properties.admin.toLowerCase().includes(rawData[Country].Country.toLowerCase())){
             if(rawData[Country].States.length == 1){
+              d.properties.CountryValue = Country;
+              d.properties.StateValue = undefined;
+              d.properties.DataValues = rawData[Country];
               return colourScale(rawData[Country].Confirmed);
               }
               for(const [State, value] of Object.entries(rawData[Country].States)){
-                if(d.properties.gn_name == value.State[0]){
+                if(d.properties.name.includes(value.State[0]) || d.properties.gn_name.includes(value.State[0])){
+                  d.properties.DataValues = value;
+                  d.properties.CountryValue = Country;
+                  d.properties.StateValue = value.State[0];
                   return colourScale(value.Confirmed);
                 }
               }
+            //  return colourScale(rawData[Country].Confirmed);
           }     
         }
 
     }).attr('style', function(d){
-     
-      for(const [Country, value] of Object.entries(rawData)){
-        
-        if(d.properties.admin.toLowerCase().includes(rawData[Country].Country.toLowerCase())){
-          if(rawData[Country].States.length == 1){
-            return "fill: " +  colourScale(rawData[Country].Confirmed);
-            }
-            for(const [State, value] of Object.entries(rawData[Country].States)){
-              if(d.properties.gn_name == State){
-                return "fill: " + colourScale(value.Confirmed);
-              }
-            }       
-        }     
-      }
+     if(d.properties.DataValues != null){
+      return "fill: " + colourScale(d.properties.DataValues.Confirmed);
+     }
+    }).attr('data-Confirmed', function(d){
+      if(d.properties.DataValues != null){
+        return d.properties.DataValues.Confirmed;
+       }
+    }).attr('data-Deaths', function(d){
+      if(d.properties.DataValues != null){
+        return d.properties.DataValues.Deaths;
+       }
+    }).attr('data-Recovered', function(d){
+      if(d.properties.DataValues != null){
+        return d.properties.DataValues.Recovered;
+       }
     })
     .attr("d", path);
-    
+    exports.currentMapData = worldData;
+    exports.currentDom = window.document.querySelector('html').innerHTML;
   return window.document.querySelector('html').innerHTML;
 }
 exports.HeatMapOfCoronaCases = function(rawData, minMax){
@@ -209,13 +221,29 @@ exports.HeatMapOfCoronaCases = function(rawData, minMax){
   var body = window.document.querySelector('body');
  // var svg = d3.select(el).select('svg');
   d3.select(body).append('script').attr('src', 'index.js');
-
+  window.document.querySelector('html').innerHTML = exports.CreateTimeSlider(window.document.querySelector('html').innerHTML);
+  exports.currentDom = window.document.querySelector('html').innerHTML;
   return window.document.querySelector('html').innerHTML;
 }
-
+// Decide based off spread of data, if we use bins or not.
 exports.CreateColourScale = function(minMax){
  return color = d3.scaleLinear().domain(minMax)
       .interpolate(d3.interpolateHcl)
       .range([d3.rgb("#0AFF43"), d3.rgb('#FF1301')]);
+}
+
+exports.CreateTimeSlider = function(HTMLstub){
+  const { JSDOM } = jsdom;
+  const { window } = new JSDOM(HTMLstub);
+  const { document } = window.document;
+  var el = window.document.querySelector('#dataviz-container');
+  var body = window.document.querySelector('body');
+  
+  // JSDom slider control, link to function that class back to the server to clear the dom and update the map
+  d3.select(body).append("div").attr('id', 'UserController').append('input').attr('type', 'date').attr('id', 'DateSelector');
+  var controller = window.document.getElementById('DateSelector');
+  d3.select(controller).attr('onchange', 'onDateChange()');
+  exports.currentDom = window.document.querySelector('html').innerHTML;
+  return window.document.querySelector('html').innerHTML;
 }
 

@@ -3,7 +3,6 @@ svg.selectAll('path').on('mouseenter', handleMouseOver).on('mouseleave', handleM
 
 // Create Event Handlers for mouse
 function handleMouseOver(d, i) {  // Add interactivity
-    console.log(i);
     
     // Use D3 to select element, change color and size
     d3.select(this).attr('stroke', 'black').attr('stroke-width', '5');
@@ -23,4 +22,36 @@ function handleMouseOver(d, i) {  // Add interactivity
   
     // Select text by id and then remove
     //d3.select('#t' +  d.class).remove();  // Remove text location
+  }
+
+  function onDateChange(){
+    $.get('/getDate', {
+      "Date" : document.getElementById('DateSelector').value
+    }, 
+    function(data, status){
+      for(const [country, value] of Object.entries(data)){
+          
+          var ID = []; 
+          $("path").each(function() { 
+              if (this.id.substr(0,7) == "subunit") { 
+                  let searchString = this.id.substr(7, this.id.length -1);
+                  if(data[this.data-state] == null){
+                      // then this must be a state of another country. Let's search
+                      for(const [searchCountry, searchValues] of Object.entries()){
+                          if(searchValues[this.data-state] != null){
+                              this.style = {fill : searchValues[this.data-state].ConfirmedColour };
+                              this.stroke = searchValues[this.data-state].ConfirmedColour;
+                              console.log("Updating Colour of " + searchCountry);
+                          }
+                      }
+                  } else{
+                    this.style = {fill: searchValues[this.data-state].ConfirmedColour};
+                    this.stroke = searchValues[this.data-state].ConfirmedColour;
+                    console.log("Updating Colour of " + this.data-state);
+
+                  }
+              } 
+          }); 
+      }
+    })
   }

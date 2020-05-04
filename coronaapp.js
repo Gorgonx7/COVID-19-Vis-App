@@ -24,8 +24,9 @@ var d3Tools = require('./d3JSTools');
 var frontEnd = require('./d3FrontEnd');
 
 var WindowToDisplay;
-require('./Load_data').readInData(function(dataArray){   
-        require('./d3JSTools').GetLatestData(dataArray, function(latestData){
+require('./Load_data').readInData(function(data){  
+    dataArray = data; 
+        require('./d3JSTools').GetLatestData(data, function(latestData){
             var minMax = d3Tools.GetMinMaxValue("Confirmed", latestData);
             WindowToDisplay = frontEnd.HeatMapOfCoronaCases(latestData, minMax);
         });
@@ -36,7 +37,12 @@ router.get('/', (req,res) =>{
     res.send(WindowToDisplay);
     //res.sendFile('index.html');
 });
-
+router.get('/getDate', (req, res) =>{
+    console.log(dataArray[req.query.Date]);
+   
+    
+    res.send(d3Tools.MapMapData(frontEnd.currentMapData, dataArray[req.query.Date]));
+});
 //add the router
 app.use(express.static(__dirname + '/public/views'));
 app.use(express.static(__dirname + '/public/js'));
